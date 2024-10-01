@@ -21,6 +21,17 @@ def friedman(cypher):
     L = (Ke-Kr)/(K-Kr)
     print("L = ",L)
 
+
+def analyse_frequentielle(cypher,L) :
+    print(int((len(cypher)-(len(cypher)%L))/L))
+    decoupage = [[] for _ in range(0,int((len(cypher)-(len(cypher)%L))/L))]
+    #Découpage de boucher car si la phrase
+    #est assez longue cela ne changera pas les occurences
+    for i in range(int((len(cypher)-(len(cypher)%L))/L)):
+        decoupage[i] = cypher[(i*L):(i*L)+L]
+    print(decoupage)
+    
+
 probabilites_phrase("bonjourjesuisunephraseenminusculesansespaces")
 probabilites_phrase("cameo")
 probabilites_phrase("pepe")
@@ -34,3 +45,8 @@ print("Test de friedman 2: ")
 # m = helloiamanenglishsentencewithalotofwordsinitandeventhoughmynameisbenjaminiamold
 # c=c
 friedman("jgnnqkcocpgpinkujugpvgpegykvjcnqvqhyqtfukpkvcpfgxgpvjqwijoapcogkudgplcokpkcoqnf")
+
+# m = hereisanexampleofaverylongcoherentenglishsentencethatcontinuestogrowwithoutanyspacesorpunctuationanditisimportanttonotethattheprocessofreadingthissentencecanbecomechallengingasthelackofspacesbetweenwordsrequiresyoutocarefullyparseeachwordinthecontextofthesentenceandastheletterscontinueonwardyoumightfindthatyourmindstartstobuildapatterninthewaythatyoureadthesewordswhichcangreatlyaidintheprocessofdecodingwhatisotherwiseafairlycomplexstringoftextasitgoesonandonthegoalhereistocreateaphraseofsignificantlengththatcanbothbemindbendingandinterestingwhilesimultaneouslyfollowingtheguidelinesthathavebeenprovidedinthisrequestyoumayalsonoticethattheabsenceofpunctuationleavesnoroomfortraditionalgrammarorsyntacticstructuringbutregardlessyouwillhopefullystillfindthatthissentenceisholdingontoitscoherenceevenasitstretchesfurtherandfurthertochallengethelimits
+# c = iamakey
+
+analyse_frequentielle("pedeswyvejawtjmorafipglanqgmpedexxcvgxiclqmnfexgcbhmtmslbizuowrwgdogagbhaudelgsbamiqwrbuxgrcafiyryvdutswgupardelbtanyxcbhmtdlcxracowqwfdekhgvgfhswqmnfexgckazbogmueohkpjmnsixkyatteveasorszeamsnedacmniobhqzecusvcayaudsairqfepjgpmrcicictwyvbqnfhogmvtqxdsdbhqsorrmnoekrbisfhopcbtqrcgmvtuneimvwmrncmcmugrxdqnptrergogrwmllsfabxqbonuspbipmtdipviztriuiyfhkxwwudekhrpeeegsplsihsgfkazgbiyblkashgvttezvmkeesyjbmcadsreehmtswmbhqrgmqmarasvjgcamzpcfsfrsrewffehxyaifgyiqwnmnnslbhqgyejpedeswrwcdekxciptrkwcwfeiqrgnioaxxjmnstrxfitoaxfmbhnewmllbqnnmloazdsrrmrqsdmlowtiviqqmgldelmogsvcdwlxogmlotteqyglexixiqbhmtretmbqextpwvudohgvtticvcyuqsdcmcmmykpqwnatsgcbhmtdlcibeexgcwfbuxgrcafiyrjmahecrmzoampspbrmdsxgwnmlqvyummryvqgnfamxgksfregrcrunqfsbrqgkvbteesisseixlrsnmfglvcqbixlpmllttadxfqseexxcvcqiclmtdunqslboutcgmpedexgcmvqnkwgbsfroxapeefevrpedaxhdcrfhovrwctavpcvgqtrijqmutc",7)
