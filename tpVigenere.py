@@ -1,6 +1,12 @@
 import re
 from collections import Counter
+import math
 
+
+
+#----------------------------
+#PARTIE 1
+#----------------------------
 
 # Chiffrage d'un caractère avec une clé
 def encrypt(m,c):
@@ -31,7 +37,106 @@ def decrypt_vigenere(encrypted_text, key):
         decrypted_text += decrypt(encrypted_text[i], key[i%len(key)])
     return decrypted_text
 
+def vigenere():
+    # Saisie d'un message
+    text = input("Entrez du texte : ")
+    text = text.lower()
+    text = text.replace(" ","")
+    # Saisie d'une clé
+    key = input("Saisir la clé : ")
+    key = key.lower()                       
+    key = key.replace(" ","")
 
+    encrypted_message = encrypt_vigenere(text, key)
+    decrypted_message = decrypt_vigenere(encrypted_message, key)
+    print(f"Message chiffré : {encrypted_message}" )
+    print(f"Message déchiffré : {decrypted_message}")
+
+#----------------------------
+#PARTIE 2.1
+#----------------------------
+
+def kasiki_method():
+    # Exemple exercice 6
+    cypher = "abcdefghijklmnopqrstuvwxyzabcdmnoabc"
+    # Exemple du cours
+    cypher1 = "KQOWEFVJPUJUUNUKGLMEKJINMWUXFQMKJBGWRLFNFGHUDWUUMBSVLPSNCMUEKQCTESWREEKOYSSIWCTUAXYOTAPXPLWPNTCGOJBGFQHTDWXIZAYGFFNSXCSEYNCTSSPNTUJNYTGGWZGRWUUNEJUUQEAPYMEKQHUIDUXFPGUYTSMTFFSHNUOCZGMRUWEYTRGKMEEDCTVRECFBDJQCUSWVBPNLGOYLSKMTEFVJJTWWMFMWPNMEMTMHRSPXFSSKFFSTNUOCZGMDOEOYEEKCPJRGPMURSKHFRSEIUEVGOYCWXIZAYGOSAANYDOEOYJLWUNHAMEBFELXYVLWNOJNSIOFRWUCCESWKVIDGMUCGOCRUWGNMAAFFVNSIUDEKQHCEUCPFCMPVSUDGAVEMNYMAMVLFMAOYFNTQCUAFVFJNXKLNEIWCWODCCULWRIFTWGMUSWOVMATNYBUHTCOCWFYTNMGYTQMKBBNLGFBTWOJFTWGNTEJKNEEDCLDHWTYYIDGMVRDGMPLSWGJLAGOEEKJOFEKUYTAANYTDWIYBNLNYNPWEBFNLFYNAJEBFR"
+    # 2.1 Méthode de Babbage et Kasiki
+    substring_finder(cypher1, 3)
+
+#----------------------------
+#PARTIE 2.2
+#----------------------------
+#Exercice 9
+#Comme la phrase est générée aléatoirement, la probabilité que 2 lettres tirées soient les mêmes reviens à faire un tirage avec une probabilité de 1/26 ≃ 0.38.
+
+#Exercice 10
+#La valeur est différente car la distribution des caractères dans une phrase en anglais est différente d'une distribution aléatoire. 
+#Par exemple, les voyelles ont tendance apparaîssent plus fréquement car elles sont présentes dans la majorité des mots anglais.
+#(source : https://www3.nd.edu/~busiforc/handouts/cryptography/letterfrequencies.html)
+
+
+#Exercice 11
+#Compteur d'occurences des lettres dans la phrase
+def compteur_occurences(phrase):
+    cptdict = dict()
+    for k in phrase :
+        if k in cptdict : 
+            cptdict[k]+=1
+        else :  
+            cptdict[k]=1
+    return cptdict
+
+
+#Exercice 12
+#Calcul de la distribution des lettres dans la phrase
+def probabilites_phrase(phrase):
+    l = len(phrase)
+    res = 0
+    cptdict = compteur_occurences(phrase)
+    #Calcul de la probabilité :
+    for k in cptdict :
+        res+=(cptdict[k]/l)*((cptdict[k]-1)/(l-1))
+    print("K = ",res)
+    return res
+
+#Friedman compare la distribution des lettres à la distribution de la langue du message pour estimer la taille de la clé
+def friedman(cypher,Ke = 0.067):
+    Kr = 1/26 #Distribution aléatoire
+    K = probabilites_phrase(cypher)
+    L = (Ke-Kr)/(K-Kr)
+    print("L = ",L)
+    return L
+
+#Exercice 13
+#Le test de friedmann peut échouer quand la distribution des lettres n'est pas représentative de la langue dans laquelle elle est écrite.
+#Il est possible de rédiger des phrases en anglais en faussant la distribution normale du langage, en changeant les mots par des synonimes par exemple
+
+#Exercice 14
+def analyse_frequentielle(cypher,L,most_used_letter = 'e') :
+    #Création de sous parties codées avec la même lettre
+    dec = ["" for _ in range(L)]
+    for i in range(0,(len(cypher)-len(cypher)%L),L):
+        for j in range(L):
+            dec[j]+=cypher[i+j]
+
+    #On regarde la lettre qui apparaît le plus dans chaque sous séquence
+    #On regarde le décalage entre elle est la lettre la plus utilisée dans notre message
+    #Le décalage aura de grande chance de donner l'indice de la lettre utilisée pour chiffrer la sous partie !
+    for i in range(L):
+        occ = compteur_occurences(dec[i])
+        v = {k for k in occ if occ[k] == max(occ.values())}
+        first_letter = v.pop()
+        index_fl = ord(first_letter) - ord('a');
+        index_lang = ord(most_used_letter) - ord('a');
+        decalage = ((index_fl - index_lang + 26) % 26) 
+        print(i+1,"e lettre de la clé : ",chr((decalage)+ord('a')))
+
+
+
+#----------------------------
+#PARTIE 3
+#----------------------------
 # Déchiffrage d'une portion du texte chiffré en utilisant la méthode de Bazeries avec un mot probable
 def decrypt_bazeries(encrypted_text, word, position):
     decrypted_text = ""
@@ -104,41 +209,6 @@ def substring_finder(decrypted_text, sub_size):
     else:
         return repeated_substrings
 
-
-
-""" Main """
-
-
-
-def vigenere():
-    # Saisie d'un message
-    text = input("Entrez du texte : ")
-    text = text.lower()
-    text = text.replace(" ","")
-    # Saisie d'une clé
-    key = input("Saisir la clé : ")
-    key = key.lower()                       
-    key = key.replace(" ","")
-
-    encrypted_message = encrypt_vigenere(text, key)
-    decrypted_message = decrypt_vigenere(encrypted_message, key)
-    print(f"Message chiffré : {encrypted_message}" )
-    print(f"Message déchiffré : {decrypted_message}")
-
-# vigenere()
-
-
-def kasiki_method():
-    # Exemple exercice 6
-    cypher = "abcdefghijklmnopqrstuvwxyzabcdmnoabc"
-    # Exemple du cours
-    cypher1 = "KQOWEFVJPUJUUNUKGLMEKJINMWUXFQMKJBGWRLFNFGHUDWUUMBSVLPSNCMUEKQCTESWREEKOYSSIWCTUAXYOTAPXPLWPNTCGOJBGFQHTDWXIZAYGFFNSXCSEYNCTSSPNTUJNYTGGWZGRWUUNEJUUQEAPYMEKQHUIDUXFPGUYTSMTFFSHNUOCZGMRUWEYTRGKMEEDCTVRECFBDJQCUSWVBPNLGOYLSKMTEFVJJTWWMFMWPNMEMTMHRSPXFSSKFFSTNUOCZGMDOEOYEEKCPJRGPMURSKHFRSEIUEVGOYCWXIZAYGOSAANYDOEOYJLWUNHAMEBFELXYVLWNOJNSIOFRWUCCESWKVIDGMUCGOCRUWGNMAAFFVNSIUDEKQHCEUCPFCMPVSUDGAVEMNYMAMVLFMAOYFNTQCUAFVFJNXKLNEIWCWODCCULWRIFTWGMUSWOVMATNYBUHTCOCWFYTNMGYTQMKBBNLGFBTWOJFTWGNTEJKNEEDCLDHWTYYIDGMVRDGMPLSWGJLAGOEEKJOFEKUYTAANYTDWIYBNLNYNPWEBFNLFYNAJEBFR"
-    # 2.1 Méthode de Babbage et Kasiki
-    substring_finder(cypher1, 3)
-
-# kasiki_method()
-
-
 def bazeries_method():
     
     # Exemple du cours
@@ -159,5 +229,24 @@ def bazeries_method():
             a = ''.join([decrypted_text[i] for i in range(len(key), sub[0][1][1])])
             extended_key = key + a
             print(f"Clé trouvée : {extended_key}")
-       
-bazeries_method()
+
+
+
+""" Main """
+
+# vigenere()
+
+# kasiki_method()
+      
+#bazeries_method()
+
+
+#Friedman n'est pas très précis pour des petites phrases !
+# m=helloiambenjaminilovechocolate
+# c=uwu
+#friedman("baffkcuivyjduichefirywdiwkfupy")
+
+# m = hereisaverylongsentenceinenglishthatwillreachabouttwothousandcharactersanditwillcontinuetoflowwithoutanyspacesorpunctuationwhatsoeverasyourequestedthechallengehereisnotonlytoreadthetextbutalsotoseehowyourmindnaturallyadjuststoparseeachindividualwordandfigureoutitsmeaningdespitebeingpresentedinaconstantunbrokenstringoflettersnowasthissentencegrowsitbecomesmoredifficulttoprocessbutwithsomefocusyoucanstillfinditpossibletoextractmeaningfromitthissentenceisdesignedtocontinuouslyexpanduntilwereachthetargetofaroundtwothousandcharacterswhilemaintainingcoherenceandmeaningthissortofexerciseisactuallyquitedemandingforyourbrainasitforcesittoprocesslettercombinationsinanunusualwaynormallywedealwithspacespunctuationandothercueslikespacingtosupportourofunderstandingbutnowwithoutthoseaidswearefacedwithachallengingtaskofunderstandingbymentallyseparatingwordsnowletscontinuewiththesentencegettingevenlongerandlongerasitisnecessarytoachievethedesiredlengthwithoutsacrificinganymeaningatallintheprocesseventhoughthismayseemlikeastressfulwaytoreaditdemonstratesaninterestingaspectofhumancognitiveskillsyourbrainisabletocopewiththeabsenceofspacesandstillidentifythestructureofthewordsweuseinhumanlanguagenowasthecharacterskeepincreasingthereisstillacleargoalofreachingatotalofaroundtwothousandcharactersinthesingleuninterruptedstreamthismeansthatwemustcontinuethephrasewithoutspacesorevenusingpunctuationtobridgethedifferentsectionsorideasofthemessageonceanideaisintroducedweshiftseamlesslyintothenextideawithoutanyneedtostoporpauseforthetexttokeeponfunctioningintuitivelyhoweverthisexperimentalsentenceshowswhatcaneventuallyhappenwhenournormalreadinghabitsarechallengedinnewwaysyoulllikelyfindyoudevelopabettercapacitytoparsethesechunksoflettersonceyougainmomentuminreadingthetextandyoumightfindthattheharderthetextistoreadthemorefocusedyourmindbecomesasitstrivestocorrectlyidentifyallthewordsnowtocontinuetowardsthetargetoftherequirednumberofcharacterswecankeepaddingmoreandmorewordstotheoveralllengthensuringwehavethesameconsistentlevelofcoherencethroughoutwhiletheresnocleardivisionhereyoucannoticethattherearestillcertainpatternsinthesentencethatmaketheevolutionofthetextmorepredictableallowingyourcognitiontofillinthegapsbetweenwordseventhoughnospacesareactuallybeingusedastheparagraphlengthensitalsoservesasaproofthatreadersadaptoverconsiderabletimeperiodswhenfacedwithunfamiliarpresentationsoftextthiscognitiveflexibilityisnoteworthybecauseitalsohighlightsourinnatecapacitytolearnandadapttonewchallengesasweapproachtwothousandcharacterswemustcontinuetheflowofthetextaddingmoredescriptioninsuchawaythatmeaningisneverlostandcoherenceisalwaysmaintaineddespiteanydifficultiespresentedinmaintainingthissteadyflowyoucancontinuetoreadthroughsmoothlynowaswesteadilypushfurtherthroughthelimituntilwereachourgoal
+# c = iamakey
+approx_key = friedman("pedeswydedyvslosqndilkeunoretiehdlybwulvvcictalssbtiodlmcsmnngfirmcdipaazdsxuqlxcyrrqngedsdtoiwsxfwufaxcqxaoecspxuzcdyybianglybsaefipiskoevcyuqsdibbhqcrejtezgolczeusxsrwnxydspmaptrirmxfbexytsatywcmhawisszmunnrybudavpwidvucxqbobabwcmaohsrbqvudeejeoddkrbnisubimctutcqcinunqhcaputofcqnspbiqmnfenmlicancxyvtgnlvmsezsdvgvgafvirbedsxsuisfhswqmnfexgcorawcmrjeoowiquodenmdniouvxrwpdomiqabgtgmrpsamojmkueyyyainetspjnizdsxnwseilpcboqxdvyktyekrgvgrryqgbtticwcvtqnmigadqssklmdfomslbizuyyqtyqxzelluztspumrqamlrpefabkcborabssvdfwyxfwueaxhapadamxczsihspcuaundegvizgmsfmrqnmiyvdyekrgvgfhswqwrfopivmroicigaaoteejtycusxcleyaxhgvgrobcmcrnrkmlisutpspkeeidxmxracowqteftovawmnixerqozssryvuzucyytwmyxspuaxliaclemlgmrpsbamiqxuzcdyybiankrbwttebgsmsxiuiqxaoixkrwsgpzspbogryjsvdqrcxyvdunqfsbnawgmrpogtdlmaeminwumadepeamdiidlykhmlviloizgdeqsoruxhczsfaxhgvgnywilbaxliwcxadadmlowarnwlwwxedwawnfixyceifhdlcaeztoramgqtdmloehexpmvgqrkrbtozgovyaificrckeeskvwbomcrmcdefhohcaidenpcvgfhgmrpogtceazirimmloazywiyvizgkxytlundlcxracowqmvqndlmcgttrmquaksoiktiwekwrzeespyjeaktyvcidutnikwnetbermsmnsrrmrqsdmloaepogrwftuwelkosnsxgdeekspjayaubfpiiziceztefomsnmwutrxfmansoramorszeamsmnnwrqlxinilbirydlcatdumxszeafdlceoddcaccsqixlsuazlkrecasexsuisfhogfirmcdipakqezmlkrqacmlottebigasfivpyklqabkmilafbiykhunqerwtmlyjyzognnxuwttoewyvdohkvyktqrcmlbhqssretegnsrrmrduzxclsfroekbhuswiyvsfhkxummgsdgmvtuneirpebhbeqmwutrssbsbamiqwrqvorsaizgzylktgadmmvtabbmboefhohgnfqrorraeotsslaodiniyaortrikmseaqimvcqaxmbmaussrrzopumibeeehsjraemmviqalkixxmbhqnobrqdqagmrpogtkrwveqddsqbobobtycsqfyvrpefehxrwkqezslnuzcdmmvizgsrrcififijghawozcztticivxediwilbaxsorrmnoeclmesihkxainqvorrcaxlilyxpqnglcvogrxspuaxroebqnshkfgbsmrogfilxexkcliznoauiyeyyyjtlukopwnizdisslehevsnibqtdipkabammrgtapkvqmtteciapuzkcsdteftovqwnoeissoaunwskmnfuwmlzemdsrebhqtobrinpyyykqgttpmllttadxfmhmrnipbhqtobrqsfobiylttewspmfacewclyaubqgvdnemskmsmssxqbruvowrwcarbiablkinilbirykpjbhqwyvbanawdsawnfixycboiabhqbhqtkvemtafdlczecusvclngmlipwfohkvyktqrcackazkoinidpixkkwrqaxhkwrqwyvbatatrimdedavpjmnstrilaudixkumhmvoxfmsmmogmvsusdilblqvopmncahovcvcqtrvmcgtoexupixedlczeenygjmaddszgaianripmyaumelvofimirpaftripmadecxgtloebxyqnbadxczneixxfmsqndilkefhkxkikqtricdoxudmmvortrirmxfmyvcxrqdsgribxekpjwwunqcmcrooqrgbiandsdqlxixxfmgmpcfcbwqexamzdeefilbhauqllwsbamiqirqamxsilxyligvggsohyattezepigdazljmnstrilaifavwmaedvowyaabrysdbhmtbiyledskhyxtavovawneinipibxedmkmpqrssbawtexjykepwsxfcnrawmjqadpbiqmnfadmmvsafdivbtticgmonutszcnlqxsfgtifyswlwtqwyvrpynemesaeutkpqwhugrpgohfsyypqnzadiaipmcsxwboxekvlinpanenbtanoaapaxloremsmsgiyxpdokgfbwatrssaazdmlyzaotovqeeyucxawnfixycbhqfvsuwffhoxcftmdnmlomarohcacdizxgwnuncyapaiaixfityekrgvgusxitmrxocxyvdooripmnoeswytwmycqyqnfasrcldqszmrmazynmdniouvxgmsbrowcvtqdsrkiiztkmlqnstrmqatqancdtoiyyyainooxxgvuqtyvcidfhbssohemysrplknyayawqsdiylixyzyqpfgrdlczttryyepttevmkqtgndmjeedekgfwudgyej")
+analyse_frequentielle("pedeswydedyvslosqndilkeunoretiehdlybwulvvcictalssbtiodlmcsmnngfirmcdipaazdsxuqlxcyrrqngedsdtoiwsxfwufaxcqxaoecspxuzcdyybianglybsaefipiskoevcyuqsdibbhqcrejtezgolczeusxsrwnxydspmaptrirmxfbexytsatywcmhawisszmunnrybudavpwidvucxqbobabwcmaohsrbqvudeejeoddkrbnisubimctutcqcinunqhcaputofcqnspbiqmnfenmlicancxyvtgnlvmsezsdvgvgafvirbedsxsuisfhswqmnfexgcorawcmrjeoowiquodenmdniouvxrwpdomiqabgtgmrpsamojmkueyyyainetspjnizdsxnwseilpcboqxdvyktyekrgvgrryqgbtticwcvtqnmigadqssklmdfomslbizuyyqtyqxzelluztspumrqamlrpefabkcborabssvdfwyxfwueaxhapadamxczsihspcuaundegvizgmsfmrqnmiyvdyekrgvgfhswqwrfopivmroicigaaoteejtycusxcleyaxhgvgrobcmcrnrkmlisutpspkeeidxmxracowqteftovawmnixerqozssryvuzucyytwmyxspuaxliaclemlgmrpsbamiqxuzcdyybiankrbwttebgsmsxiuiqxaoixkrwsgpzspbogryjsvdqrcxyvdunqfsbnawgmrpogtdlmaeminwumadepeamdiidlykhmlviloizgdeqsoruxhczsfaxhgvgnywilbaxliwcxadadmlowarnwlwwxedwawnfixyceifhdlcaeztoramgqtdmloehexpmvgqrkrbtozgovyaificrckeeskvwbomcrmcdefhohcaidenpcvgfhgmrpogtceazirimmloazywiyvizgkxytlundlcxracowqmvqndlmcgttrmquaksoiktiwekwrzeespyjeaktyvcidutnikwnetbermsmnsrrmrqsdmloaepogrwftuwelkosnsxgdeekspjayaubfpiiziceztefomsnmwutrxfmansoramorszeamsmnnwrqlxinilbirydlcatdumxszeafdlceoddcaccsqixlsuazlkrecasexsuisfhogfirmcdipakqezmlkrqacmlottebigasfivpyklqabkmilafbiykhunqerwtmlyjyzognnxuwttoewyvdohkvyktqrcmlbhqssretegnsrrmrduzxclsfroekbhuswiyvsfhkxummgsdgmvtuneirpebhbeqmwutrssbsbamiqwrqvorsaizgzylktgadmmvtabbmboefhohgnfqrorraeotsslaodiniyaortrikmseaqimvcqaxmbmaussrrzopumibeeehsjraemmviqalkixxmbhqnobrqdqagmrpogtkrwveqddsqbobobtycsqfyvrpefehxrwkqezslnuzcdmmvizgsrrcififijghawozcztticivxediwilbaxsorrmnoeclmesihkxainqvorrcaxlilyxpqnglcvogrxspuaxroebqnshkfgbsmrogfilxexkcliznoauiyeyyyjtlukopwnizdisslehevsnibqtdipkabammrgtapkvqmtteciapuzkcsdteftovqwnoeissoaunwskmnfuwmlzemdsrebhqtobrinpyyykqgttpmllttadxfmhmrnipbhqtobrqsfobiylttewspmfacewclyaubqgvdnemskmsmssxqbruvowrwcarbiablkinilbirykpjbhqwyvbanawdsawnfixycboiabhqbhqtkvemtafdlczecusvclngmlipwfohkvyktqrcackazkoinidpixkkwrqaxhkwrqwyvbatatrimdedavpjmnstrilaudixkumhmvoxfmsmmogmvsusdilblqvopmncahovcvcqtrvmcgtoexupixedlczeenygjmaddszgaianripmyaumelvofimirpaftripmadecxgtloebxyqnbadxczneixxfmsqndilkefhkxkikqtricdoxudmmvortrirmxfmyvcxrqdsgribxekpjwwunqcmcrooqrgbiandsdqlxixxfmgmpcfcbwqexamzdeefilbhauqllwsbamiqirqamxsilxyligvggsohyattezepigdazljmnstrilaifavwmaedvowyaabrysdbhmtbiyledskhyxtavovawneinipibxedmkmpqrssbawtexjykepwsxfcnrawmjqadpbiqmnfadmmvsafdivbtticgmonutszcnlqxsfgtifyswlwtqwyvrpynemesaeutkpqwhugrpgohfsyypqnzadiaipmcsxwboxekvlinpanenbtanoaapaxloremsmsgiyxpdokgfbwatrssaazdmlyzaotovqeeyucxawnfixycbhqfvsuwffhoxcftmdnmlomarohcacdizxgwnuncyapaiaixfityekrgvgusxitmrxocxyvdooripmnoeswytwmycqyqnfasrcldqszmrmazynmdniouvxgmsbrowcvtqdsrkiiztkmlqnstrmqatqancdtoiyyyainooxxgvuqtyvcidfhbssohemysrplknyayawqsdiylixyzyqpfgrdlczttryyepttevmkqtgndmjeedekgfwudgyej",math.floor(approx_key))
