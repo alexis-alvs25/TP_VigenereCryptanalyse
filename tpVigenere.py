@@ -1,7 +1,8 @@
 import re
 from collections import Counter
 import math
-
+from math import gcd
+from functools import reduce
 
 
 #----------------------------
@@ -56,13 +57,64 @@ def vigenere():
 #PARTIE 2.1
 #----------------------------
 
+# Exercice 8
+#Les répétitions peu probables sont celles qui sont probablement dues au hasard et donc ne reflètent pas la structure répétitive de la clé de chiffrement.
+#Ces répétitions peuvent fausser les calculs de distances et mener à une estimation incorrecte de la longueur de la clé.
+#Une répétition peu probable ne partage aucun diviseur commun (autre que 1) entre les distances de leurs occurrences.
+#On garde donc uniquement les répétitions dont les distances ont des diviseurs communs supérieurs à 1.
+#Ensuite, on fait un classement des répétitions par probabilité. Les répétitions avec un PGCD élevé et un nombre de répétitions important sont plus probables.
+#On supprime 10% des répétitions les moins probables et on calcule la longueur de la clé avec les données restantes.
+
 def kasiki_method():
-    # Exemple exercice 6
     cypher = "abcdefghijklmnopqrstuvwxyzabcdmnoabc"
-    # Exemple du cours
     cypher1 = "KQOWEFVJPUJUUNUKGLMEKJINMWUXFQMKJBGWRLFNFGHUDWUUMBSVLPSNCMUEKQCTESWREEKOYSSIWCTUAXYOTAPXPLWPNTCGOJBGFQHTDWXIZAYGFFNSXCSEYNCTSSPNTUJNYTGGWZGRWUUNEJUUQEAPYMEKQHUIDUXFPGUYTSMTFFSHNUOCZGMRUWEYTRGKMEEDCTVRECFBDJQCUSWVBPNLGOYLSKMTEFVJJTWWMFMWPNMEMTMHRSPXFSSKFFSTNUOCZGMDOEOYEEKCPJRGPMURSKHFRSEIUEVGOYCWXIZAYGOSAANYDOEOYJLWUNHAMEBFELXYVLWNOJNSIOFRWUCCESWKVIDGMUCGOCRUWGNMAAFFVNSIUDEKQHCEUCPFCMPVSUDGAVEMNYMAMVLFMAOYFNTQCUAFVFJNXKLNEIWCWODCCULWRIFTWGMUSWOVMATNYBUHTCOCWFYTNMGYTQMKBBNLGFBTWOJFTWGNTEJKNEEDCLDHWTYYIDGMVRDGMPLSWGJLAGOEEKJOFEKUYTAANYTDWIYBNLNYNPWEBFNLFYNAJEBFR"
-    # 2.1 Méthode de Babbage et Kasiki
-    substring_finder(cypher1, 3)
+    
+    all_substrings = substring_finder(cypher1, 3)
+    
+    fusion_distances_list = []
+    fusion_dividers_list = []
+    filtered_substrings = []
+    
+    for sub, data in all_substrings.items():
+        if data['count'] >= 2:
+            # Calcul du PGCD des distances
+            current_gcd = compute_gcd(data['distances'])
+            if current_gcd > 1:
+                # Si c'est une répétition probable, on la traite. Sinon elle n'est pas traitée dans le calcul de la clé
+                filtered_substrings.append({
+                    'substring': sub,
+                    'count': data['count'],
+                    'positions': data['positions'],
+                    'distances': data['distances'],
+                    'dividers': data['dividers'],
+                    'gcd': current_gcd
+                })
+
+
+    # Trier les répétitions par "probabilité" (nous prenons le PGCD comme critère)
+    filtered_substrings.sort(key=lambda x: (x['gcd'], x['count']), reverse=True)
+    # Supprimer les 10% des répétitions les moins probables
+    ten_percent = int(0.1 * len(filtered_substrings))
+    filtered_substrings = filtered_substrings[:-ten_percent] if ten_percent > 0 else filtered_substrings
+    
+    # Affichage des répétitions probables uniquement
+    print("\n--- Répétitions trouvées (probables) ---")
+    for item in filtered_substrings:
+        print(f"\n{item['substring']} : \n count : {item['count']},  \n positions : {item['positions']},  \n distances : {item['distances']},  \n dividers : {item['dividers']},\n pgcd : {item['gcd']}")
+    
+    # Fusionner distances et diviseurs des répétitions probables
+    for item in filtered_substrings:
+        fusion_distances_list.extend(item['distances'])
+        for divs in item['dividers']:
+            fusion_dividers_list.extend(divs)
+    print(f"\nToutes les distances fusionnées (probables) : {sorted(fusion_distances_list)}")
+    print(f"\nListe fusionnée des diviseurs (probables) : {sorted(fusion_dividers_list)}")
+    
+    # Compter les occurrences des diviseurs, en ignorant 1
+    count_occ = Counter(fusion_dividers_list)
+    # La taille de la clé est le diviseur qui revient le plus
+    key_size = count_occ.most_common()[1]
+    print(f"\nLa taille probable de la clé est : {key_size[0]}")
 
 #----------------------------
 #PARTIE 2.2
@@ -151,63 +203,40 @@ def decrypt_bazeries(encrypted_text, word, position):
 def dividers_list(n):
     return [i for i in range(1, n + 1) if n % i == 0]
 
+# Calcule le PGCD de toutes les distances
+def compute_gcd(distances):
+    return reduce(gcd, distances)
 
 # Trouve les sous-chaînes d'une chaine de caractère, les comptes, calcule leur distance entre elles et déduit la longueur de la clé
 def substring_finder(decrypted_text, sub_size):
-    # Dictionnaire pour stocker les sous-chaînes et les indices de leurs occurrences
     all_substrings = {}
     
-    # Parcourir les longueurs des sous-chaînes (de 3 jusqu'à la longueur du texte)
-    for length in range(sub_size, len(decrypted_text) + 1):  # +1 pour inclure les sous-chaînes de longueur maximale
+    for length in range(sub_size, len(decrypted_text) + 1):
         # Extraire les sous-chaînes de cette longueur
-        for i in range(len(decrypted_text) - length + 1):  # S'assurer de ne pas dépasser les limites du texte
-            substring = decrypted_text[i:i + length] # Extrait une sous-chaîne de longueur length qui commence à la position i
+        for i in range(len(decrypted_text) - length + 1): 
+            substring = decrypted_text[i:i + length]
             if substring in all_substrings:
-                all_substrings[substring]['count'] += 1           # On incrémente le compteur si on rencontre à nouveau cette sous-chaîne
-                all_substrings[substring]['positions'].append(i)  # Ajoute l'indice de la nouvelle occurrence
+                all_substrings[substring]['count'] += 1           
+                all_substrings[substring]['positions'].append(i)
             else:
                 all_substrings[substring] = {
                     'count': 1,
-                    'positions': [i]  # Initialise avec l'indice de la première occurrence
+                    'positions': [i],
                 }
-    # print(all_substrings)
-
-    distances = []
-    repeated_substrings = []
-    # Affiche les sous-chaînes avec une occurrence de 2 au moins et calcule la distance
-    for sub, data in all_substrings.items():
+    
+    # Calculer les distances et les diviseurs après avoir collecté toutes les positions
+    for substring, data in all_substrings.items():
         if data['count'] >= 2:
-            # print(f"\n{sub} trouvé {data['count']} fois aux positions {data['positions']}")
-            repeated_substrings.append((sub, data['positions']))
-            # Calculer les distances entre les répétitions
+            distances = []
             for j in range(1, len(data['positions'])):
                 distance = data['positions'][j] - data['positions'][j - 1]
                 distances.append(distance)
-            # print(f"Distances entre répétitions pour {sub}: {distance}")
+            all_substrings[substring]['distances'] = distances
+            # Calculer les diviseurs pour chaque distance
+            dividers = [dividers_list(distance) for distance in distances]
+            all_substrings[substring]['dividers'] = dividers
     
-    
-    # Fait la recherche des diviseurs ainsi que la taille de la clé (utile à kasiki_method())
-    if sub_size >= 3:
-        # print(f"\nToutes les distances : {distances}")
-        # Calcule la liste des diviseurs de chaque distances
-        diviseurs = [dividers_list(distance) for distance in distances]
-        # print(f"Les diviseurs de chaque distances : {diviseurs}")
-        # Fusionne les listes de listes en une et même liste unique
-        fusion_list = [item for sublist in diviseurs for item in sublist]    
-        # Counter compte chaque occurence de chaque diviseurs
-        count_occ = Counter(fusion_list)
-        # print(count_occ)
-        # La taille de la clé est le diviseur qui revient le plus parmis tous (sauf 1)
-        key_size = count_occ.most_common()[1]
-        # print(key_size)
-        print(f"\nLa clé est de taille {key_size[0]}")
-        
-        # Afficher tout le dictionnaire pour le débogage
-        # print(all_substrings)
-        
-    # Retourne les tuples de sous-chaîne avec leur position dans le texte (utile à bazeries_method())
-    else:
-        return repeated_substrings
+    return all_substrings
 
 def bazeries_method():
     
@@ -221,14 +250,18 @@ def bazeries_method():
         print(f"\nTexte déchiffré, position {i} :", decrypted_text)           
     
         sub = substring_finder(decrypted_text, 2)
-        # print(sub)
-        if sub :
-            # Selectionne la sous-chaîne
-            key = sub[0][0]
-            # Selectionne la partie du texte situé entre les 2 occurences de sous-chaîne stocké dans key
-            a = ''.join([decrypted_text[i] for i in range(len(key), sub[0][1][1])])
-            extended_key = key + a
-            print(f"Clé trouvée : {extended_key}")
+        result = [(key, value['count'], value['positions']) for key, value in sub.items()]
+
+        if sub and result[0][1] >= 2:  # Vérifie qu'il y a au moins 2 occurrences
+            # Sélectionne la sous-chaîne
+            key = result[0][0]
+            positions = result[0][2]  # Liste des positions
+
+            if len(positions) >= 2:  # Vérifie qu'il y a au moins 2 positions
+                # Sélectionne la partie du texte situé entre les 2 occurrences de la sous-chaîne
+                a = ''.join([decrypted_text[i] for i in range(len(key), positions[1])])
+                extended_key = key + a
+                print(f"Clé trouvée : {extended_key}")
 
 
 
